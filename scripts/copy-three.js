@@ -1,0 +1,1 @@
+const fs=require('fs');const path=require('path');const from=require.resolve('three/build/three.min.js');const to=path.join(__dirname,'../app/src/main/assets/game/vendor/three.min.js');fs.copyFileSync(from,to);console.log('Bundled '+to);
