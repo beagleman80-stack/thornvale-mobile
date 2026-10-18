@@ -25,6 +25,13 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Bundle Three.js offline
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          node scripts/copy-three.js
+          test -s app/src/main/assets/game/vendor/three.min.js
+
+
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
 
