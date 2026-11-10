@@ -236,6 +236,44 @@ button{font-family:inherit;color:inherit}
   #win-dialog .wb{padding:8px 10px}
   #win-dialog .dlg{font-size:14px;line-height:1.35;margin:2px 2px 8px}
 }
+
+/* Mobile polish: compact, independently scrollable sidebar on landscape phones. */
+#chat,#chatlog{pointer-events:none!important}
+#panel{overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;min-height:0}
+#side{min-height:0;overflow:hidden}
+#panel .inv{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+#panel .slot{min-width:0;max-height:58px}
+#panel .slot img{width:68%;max-height:85%;object-fit:contain}
+@media (orientation:landscape) and (max-height:700px) and (min-width:821px){
+  #app{gap:8px;padding-block:7px}
+  #side{width:clamp(205px,27vw,275px);gap:6px}
+  #topcard{padding:5px;gap:5px}
+  #minimap{width:clamp(65px,10vh,90px);height:clamp(65px,10vh,90px)}
+  #brand{font-size:17px}
+  #orbs{gap:3px}
+  .orb{height:20px;font-size:12px;padding:0 6px}
+  .orb small{font-size:9px}
+  .lvls,#trainbtn{font-size:10px}
+  #tabs{gap:2px;padding:3px}
+  .tab{padding:2px 0}
+  .tab img{width:20px;height:20px}
+  #panel{padding:6px}
+  .ptitle span:first-child{font-size:17px}
+  .ptitle .sub{font-size:11px}
+  #panel .slot{max-height:49px}
+  #panel .gear{grid-template-columns:repeat(3,44px)}
+  #panel .skills{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #panel .sk img{max-width:26px;max-height:26px}
+  #panel .train{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #panel .trn{min-height:65px;padding:4px 2px}
+  #panel .trn img{width:24px;height:24px}
+  #panel .trn b{font-size:12px}
+  #panel .pr,#panel .spl{padding:3px 4px}
+  #panel .pr img,#panel .spl>img{width:20px;height:20px}
+  #panel .pr b,#panel .spl b{font-size:12px}
+  #panel .pr small,#panel .spl small{font-size:10px}
+  #tvPauseButton{padding:5px 9px;font-size:12px}
+}
 </style>
 <div id="app">
   <div id="game">
@@ -266,7 +304,7 @@ button{font-family:inherit;color:inherit}
     <div class="card" id="panel"></div>
   </aside>
 </div>
-<button id="tvPauseButton" type="button">Pause (F9)</button><div id="tvPauseOverlay" hidden><section><h2>THORNVALE PAUSED</h2><p>The world and gameplay timers are frozen.</p><p>Press F9 or Resume to continue.</p><button id="tvResumeButton" type="button">Resume Adventure</button></section></div><div id="menu" hidden></div>
+<button id="tvPauseButton" type="button">Pause</button><div id="tvPauseOverlay" hidden><section><h2>THORNVALE PAUSED</h2><p>The world and gameplay timers are frozen.</p><p>Press F9 or Resume to continue.</p><button id="tvResumeButton" type="button">Resume Adventure</button></section></div><div id="menu" hidden></div>
 <div id="tip" hidden></div>
 <script src="./vendor/three.min.js"></script>
 <script>
@@ -7018,6 +7056,7 @@ function save() {
   if (RESETTING || window.__tvRestoringSave) return;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: 2, laps: P.laps || {}, x: P.tx, y: P.ty, hp: P.hp, pp: P.pp, xp: P.xp, inv: P.inv, equip: P.equip, bank: P.bank, style: P.style, autocast: P.autocast, pet: P.pet, coll: P.coll, kills: P.kills, set: SET, time: G.time, tvQuests:TV_QUESTS,tvHomeQuest:TV_HOME_QUEST,tvRoadFinds:TV_ROAD_FINDS,tvGuildState:TV_GUILD_STATE,tvLairProgress:TV_LAIR_PROGRESS,tvLairClaims:TV_LAIR_CLAIMS,tvRoadProgress:TV_ROAD_PROGRESS,tvDungeons:TV_DUNGEONS,tvStarterCrypt:TV_STARTER_CRYPT,tv29House:TV29_HOUSE,tv31Sea:TV31_STATE,tv30Stock:TV30.marketStock,tv30Restock:TV30.lastRestock,tvDiscovered: TV_DISCOVERED, tvWaystoneUsed: TV_WAYSTONE_USED, tvTravelAttuned: TV_TRAVEL_ATTUNED, threatExposure: TV_EXPOSURE, deathGround: G.ground.filter(g => g.tvDeathId).map(g => ({id:g.id,q:g.q,x:g.x,y:g.y,t:g.t,tvDeathId:g.tvDeathId,tvExpires:g.tvExpires})), cam: { yaw: CAM.yaw, pitch: CAM.pitch, dist: CAM.dist } })); } catch (e) { console.error('Thornvale save failed:', e); if (!window.__tvSaveWarned) { window.__tvSaveWarned = true; try { msg('Warning: game progress could not be saved. Check available disk space or browser storage permissions.', 'rare'); } catch (_) {} } }
 }
+window.tvSaveNow = save; // Native Android lifecycle bridge; same save key and schema.
 function load() {
   let d = null; try { d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { }
   if (!d || typeof d !== 'object' || !d.xp || !Array.isArray(d.inv)) return false;
@@ -7122,6 +7161,7 @@ function bindInput() {
   $('compass').addEventListener('click', () => { const target = Math.round(CAM.yaw / TAU) * TAU; CAM.yaw = target; });
   window.addEventListener('resize', resize);
   window.addEventListener('beforeunload', save);
+  window.addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); if (MUSIC.on) { MUSIC.paused = true; musicStop(); } } else if (MUSIC.paused) { MUSIC.paused = false; musicStart(); } });
 }
 let TV_PAUSED = false;
@@ -7130,7 +7170,7 @@ function tvSetPaused(v) {
   const overlay = document.getElementById('tvPauseOverlay');
   if (overlay) overlay.hidden = !TV_PAUSED;
   const btn = document.getElementById('tvPauseButton');
-  if (btn) btn.textContent = TV_PAUSED ? 'Resume (F9)' : 'Pause (F9)';
+  if (btn) btn.textContent = TV_PAUSED ? 'Resume' : 'Pause';
   if (TV_PAUSED) { save(); if (UI.keys) Object.keys(UI.keys).forEach(k => UI.keys[k] = false); }
 }
 document.getElementById('tvPauseButton').addEventListener('click', () => tvSetPaused(!TV_PAUSED));
