@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "prepare:assets": "node scripts/copy-three.js"
+  },
+  "devDependencies": {
+    "three": "0.128.0"
+  }
+}
