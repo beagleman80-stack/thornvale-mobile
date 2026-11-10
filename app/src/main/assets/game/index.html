@@ -244,7 +244,8 @@ button{font-family:inherit;color:inherit}
 #tvScrollControls{display:flex;flex:none;gap:6px;min-height:28px}
 #tvScrollControls button{flex:1;min-height:30px;background:#382c20;border:1px solid var(--edge2);border-radius:5px;color:var(--parch);font-weight:700;font-size:12px;touch-action:manipulation;cursor:pointer}
 #tvScrollControls button:disabled{opacity:.35;cursor:default}
-@media (min-height:750px) and (min-width:900px){#tvScrollControls{display:none}}
+/* Keep scroll controls visible on landscape Android screens and desktop-sized WebViews. */
+#tvScrollControls{display:flex!important;visibility:visible!important}
 
 #chat,#chatlog{pointer-events:none!important}
 #panel{overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;min-height:0}
